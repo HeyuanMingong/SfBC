@@ -11,7 +11,7 @@ def get_args():
     parser.add_argument("--env", default="halfcheetah-medium-v2") # OpenAI gym environment name
     parser.add_argument("--seed", default=0, type=int)             # Sets Gym, PyTorch and Numpy seeds
     parser.add_argument("--expid", default="default", type=str)    # 
-    parser.add_argument("--device", default="cuda", type=str)      #
+    parser.add_argument("--device", default="cuda:0", type=str)      #
     parser.add_argument("--save_model", default=1, type=int)       #
     parser.add_argument('--debug', type=int, default=0)
     parser.add_argument('--sigma', type=float, default=40.0)
@@ -31,7 +31,7 @@ def get_args():
     parser.add_argument('--reset_critic', type=int, default=1)
     parser.add_argument('--seed_per_evaluation', type=int, default=10)
     parser.add_argument('--evaluate_while_training_critic', type=int, default=1)
-    parser.add_argument('--K', type=int, default=2)
+    parser.add_argument('--K', type=int, default=500)
     print("**************************")
     args = parser.parse_known_args()[0]
     args.debug = 0
@@ -57,15 +57,21 @@ def pallaral_eval_policy(policy_fn, env_name, seed, eval_episodes=20, track_obs=
         env.seed(seed + 1001 + i)
         env.dbag_state = env.reset()
         env.dbag_return = 0.0
-        env.alpha = 100 # 100 could be considered as deterministic sampling since it's now extremely sensitive to normalized Q(s, a)
+
+        # 100 could be considered as deterministic sampling since it's now extremely sensitive to normalized Q(s, a)
+        env.alpha = 100 
         env.select_per_state = select_per_state
+
     ori_eval_envs = [env for env in eval_envs]
+
     import time
     t = time.time()
     while len(eval_envs) > 0:
         new_eval_envs = []
         states = np.stack([env.dbag_state for env in eval_envs])
-        actions = policy_fn(states, sample_per_state=32, select_per_state=[env.select_per_state for env in eval_envs], alpha=[env.alpha for env in eval_envs], replace=False, weighted_mean=False, diffusion_steps=diffusion_steps)
+        actions = policy_fn(states, sample_per_state=32, select_per_state=[env.select_per_state for env in eval_envs], 
+                            alpha=[env.alpha for env in eval_envs], replace=False, weighted_mean=False, diffusion_steps=diffusion_steps)
+        
         for i, env in enumerate(eval_envs):
             state, reward, done, info = env.step(actions[i])
             env.dbag_return += reward

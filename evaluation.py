@@ -36,7 +36,9 @@ def eval(args):
     env.action_space.seed(args.seed)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
-    args.eval_func = functools.partial(pallaral_eval_policy, env_name=args.env, seed=args.seed, eval_episodes=20, track_obs=False, select_per_state=args.select_per_state, diffusion_steps=args.diffusion_steps)
+    args.eval_func = functools.partial(pallaral_eval_policy, env_name=args.env, seed=args.seed, 
+                                       eval_episodes=20, track_obs=False, select_per_state=args.select_per_state, 
+                                       diffusion_steps=args.diffusion_steps)
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
     max_action = float(env.action_space.high[0])
@@ -45,13 +47,16 @@ def eval(args):
     marginal_prob_std_fn = functools.partial(marginal_prob_std, sigma=args.sigma, device=args.device)
     args.marginal_prob_std_fn = marginal_prob_std_fn
     if args.actor_type == "large":
-        score_model= ScoreNet(input_dim=state_dim+action_dim, output_dim=action_dim, marginal_prob_std=marginal_prob_std_fn, args=args).to(args.device)
+        score_model= ScoreNet(input_dim=state_dim+action_dim, output_dim=action_dim, 
+                              marginal_prob_std=marginal_prob_std_fn, args=args).to(args.device)
     elif args.actor_type == "small":
-        score_model= MlpScoreNet(input_dim=state_dim+action_dim, output_dim=action_dim, marginal_prob_std=marginal_prob_std_fn, args=args).to(args.device)
+        score_model= MlpScoreNet(input_dim=state_dim+action_dim, output_dim=action_dim, 
+                                 marginal_prob_std=marginal_prob_std_fn, args=args).to(args.device)
     score_model.q[0].to(args.device)
 
     
-    actor_loadpath = os.path.join("./models", args.env + str(args.seed) + args.actor_load_setting, "ckpt{}.pth".format(args.actor_load_epoch))
+    actor_loadpath = os.path.join("./models", args.env + str(args.seed) + args.actor_load_setting, 
+                                  "ckpt{}.pth".format(args.actor_load_epoch))
     print("loading actor...")
     ckpt = torch.load(actor_loadpath, map_location=args.device)
     score_model.load_state_dict(ckpt)

@@ -43,6 +43,8 @@ class Diffusion_buffer(torch.utils.data.Dataset):
         # make sure same number of data points exist in all tasks
         self.fake_len = int(np.maximum(np.round(args.sample_per_epoch / self.len), 1)) * self.len
         print(self.len, "data loaded", self.fake_len, "data faked")
+
+        self.device = args.device 
     
         
     def __getitem__(self, index):
@@ -52,8 +54,10 @@ class Diffusion_buffer(torch.utils.data.Dataset):
 
     def __add__(self, other):
         pass
+
     def __len__(self):
         return self.fake_len
+        # return self.len
     
     def _load_data(self, args):
         if "hopper" in args.env or "walker" in args.env or "halfcheetah" in args.env or "pen" in args.env or "hammer" in args.env or "door" in args.env or "relocate" in args.env or "kitchen" in args.env:
@@ -171,10 +175,13 @@ class Diffusion_buffer(torch.utils.data.Dataset):
     def update_returns(self, score_model):
         assert self.states.shape[0] == self.fake_actions.shape[0]
         qs = []
-        for states, actions in tqdm.tqdm(zip(np.array_split(self.states, self.states.shape[0] // 128 + 1), np.array_split(self.fake_actions, self.states.shape[0] // 128 + 1))):
+        for states, actions in tqdm.tqdm(zip(np.array_split(self.states, self.states.shape[0] // 128 + 1), 
+                                             np.array_split(self.fake_actions, self.states.shape[0] // 128 + 1))):
             with torch.no_grad():
-                states = torch.FloatTensor(states).to("cuda")
-                actions = torch.FloatTensor(actions).to("cuda")
+                # states = torch.FloatTensor(states).to("cuda")
+                # actions = torch.FloatTensor(actions).to("cuda")
+                states = torch.FloatTensor(states).to(self.device)
+                actions = torch.FloatTensor(actions).to(self.device)
                 states = torch.repeat_interleave(states, actions.shape[1], dim=0)
                 q = score_model.calculateQ(states, actions.reshape((states.shape[0], actions.shape[-1])))
                 q = q.reshape((actions.shape[0], actions.shape[1]))

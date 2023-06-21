@@ -55,8 +55,7 @@ class ScoreBase(nn.Module):
     def __init__(self, input_dim, output_dim, marginal_prob_std, embed_dim=32, args=None):
         super().__init__()
         self.output_dim = output_dim
-        self.embed = nn.Sequential(GaussianFourierProjection(embed_dim=embed_dim),
-            nn.Linear(embed_dim, embed_dim))
+        self.embed = nn.Sequential(GaussianFourierProjection(embed_dim=embed_dim), nn.Linear(embed_dim, embed_dim))
         self.device=args.device
         self.noise_schedule = dpm_solver_pytorch.NoiseScheduleVP(schedule='linear')
         self.dpm_solver = dpm_solver_pytorch.DPM_Solver(self.forward_dmp_wrapper_fn, self.noise_schedule)
